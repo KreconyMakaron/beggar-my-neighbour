@@ -9,15 +9,18 @@ namespace display {
 using std::chrono::time_point;
 using std::chrono::high_resolution_clock;
 using std::chrono::duration;
+using std::cout;
 
 class displayer {
 private:
     int SEED_START;
     int SEED_END;
     int BAR_WIDTH;
-    time_point<high_resolution_clock> TIME;
+    int SEEDS;
+    time_point<high_resolution_clock> PREV_TIME;
+    time_point<high_resolution_clock> START_TIME;
 public:
-  displayer(long long start, long long end, time_point<high_resolution_clock> start_time, int width = 35);
+  displayer(long long start, long long end, int width = 35);
   void progress(long long seed, int* deck, int turns, const int UPDATE_INTERVAL);
   void summary(int* deck);
 };

@@ -26,59 +26,68 @@ std::string spaces(int count) {
   return t;
 }
 
-displayer::displayer(long long start, long long end, time_point<high_resolution_clock> start_time, int width) {
-  std::cout << "\n\n";    // dummy lines
+std::string field(std::string str) {
+  return "\033[1m" + str + "\033[22m ";
+}
+
+displayer::displayer(long long start, long long end, int width) {
+  cout << "\n\n";    // dummy lines
   SEED_START = start;
   SEED_END = end;
-  TIME = start_time;
+  SEEDS = SEED_END - SEED_START + 1;
+  PREV_TIME = high_resolution_clock::now();
+  START_TIME = PREV_TIME;
   BAR_WIDTH = width;
 }
 
 void displayer::progress(long long seed, int* deck, int turns, int SEEDS_BETWEEN_SNAPSHOTS) {
-  const int SEEDS = SEED_END - SEED_START + 1;
   const double percentage = (double)(seed - SEED_START) / SEEDS;
   const int bar_position = BAR_WIDTH * percentage;
-  const duration<double, std::micro> time_elapsed = high_resolution_clock::now() - TIME;
+  const duration<double, std::micro> time_elapsed = high_resolution_clock::now() - PREV_TIME;
   const double avg = time_elapsed.count() / SEEDS_BETWEEN_SNAPSHOTS;
   const long long eta = floor(avg * (SEED_END - seed) / 1'000'000);
 
-  std::cout << MOVE_CURSOR; 
+  cout << MOVE_CURSOR; 
   
   //line 1
-  std::cout << CLEAR_LINE;
-  std::cout << print_cards(deck, DECK_SIZE/2);
+  cout << CLEAR_LINE;
+  cout << print_cards(deck, DECK_SIZE/2);
 
-  std::cout << spaces(4);
+  cout << spaces(4);
   for (int i = 0; i < BAR_WIDTH; ++i) {
-      if (i <= bar_position) std::cout << "█";
-      else std::cout << " ";
+      if (i <= bar_position) cout << "█";
+      else cout << " ";
   }
-  std::cout << spaces(2) << std::fixed << std::setprecision(2) << percentage * 100 << "%";
-  std::cout << "\n";
+  cout << spaces(2) << std::fixed << std::setprecision(2) << percentage * 100 << "%";
+  cout << "\n";
 
   //line 2
-  std::cout << CLEAR_LINE;
-  std::cout << print_cards(deck, DECK_SIZE/2, DECK_SIZE/2);
+  cout << CLEAR_LINE;
+  cout << print_cards(deck, DECK_SIZE/2, DECK_SIZE/2);
 
-  std::cout << spaces(4) << "\033[1mMost Turns:\033[22m " << turns;
-  std::cout << spaces(4) << "\033[1mAvg:\033[22m " << std::fixed << std::setprecision(2) << avg << "μs";
-  std::cout << spaces(4) << "\033[1mETA:\033[22m " << print_time(eta);
-  std::cout << "\n";
+  cout << spaces(4) << field("Most Turns:") << turns;
+  cout << spaces(4) << field("Avg:") << std::fixed << std::setprecision(2) << avg << "μs";
+  cout << spaces(4) << field("ETA:") << print_time(eta);
+  cout << "\n";
 
-  TIME = high_resolution_clock::now();
+  PREV_TIME = high_resolution_clock::now();
 }
 
 void displayer::summary(int* deck) {
-  auto now = high_resolution_clock::now();
-  duration<double, std::micro> time = now - TIME;
-  long long amt = floor(time.count() / 1'000'000);
+  const duration<double, std::micro> time = high_resolution_clock::now() - START_TIME;
+  const long long amt = floor(time.count() / 1'000'000);
+  const double avg = time.count() / SEEDS;
 
-  std::cout << "\n\033[1msimulation took:\033[22m ";
-  std::cout << print_time(amt);
-  std::cout << "\n\033[1mbest cards:\033[22m\n";
+  cout << "\n";
+  cout << field("simulation took:");
+  cout << print_time(amt) << "\n";
 
-  std::cout << print_cards(deck, DECK_SIZE/2);
-  std::cout << "\n";
-  std::cout << print_cards(deck, DECK_SIZE/2, DECK_SIZE/2);
+  cout << field("avg time per seed:");
+  cout << std::fixed << std::setprecision(2) << avg << "μs" << "\n";
+
+  cout << field("best cards:") << "\n";
+  cout << print_cards(deck, DECK_SIZE/2);
+  cout << "\n";
+  cout << print_cards(deck, DECK_SIZE/2, DECK_SIZE/2);
 }
 }

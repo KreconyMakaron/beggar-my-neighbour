@@ -54,7 +54,6 @@ public:
   }
 };
 
-
 void simulate(int &turn_count, int *deck) {
   turn_count = 0;
   int penalty = 0;
@@ -112,7 +111,7 @@ int main(int argc, char** argv) {
   SEED_END = std::stoll(argv[2]);
   SEEDS = SEED_END - SEED_START + 1;
 
-  display::displayer d(SEED_START, SEED_END, std::chrono::high_resolution_clock::now());
+  display::displayer d(SEED_START, SEED_END);
 
   int g_most_turns = 0;
   int g_best_deck[DECK_SIZE];
