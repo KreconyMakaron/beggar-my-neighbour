@@ -5,7 +5,6 @@
 #include"display.h"
 
 const int DECK_SIZE = 52;
-const int THREAD_COUNT = 8;
 const int UPDATE_INTERVAL = 1'000'000;
 
 typedef long long ll;
@@ -16,7 +15,7 @@ const int start_deck[DECK_SIZE] = {
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
-ll SEED_START, SEED_END, SEEDS;
+ll SEED_START, SEED_END;
 
 class queue {
 public:
@@ -109,13 +108,11 @@ int main(int argc, char** argv) {
 
   SEED_START = std::stoll(argv[1]);
   SEED_END = std::stoll(argv[2]);
-  SEEDS = SEED_END - SEED_START + 1;
 
   display::displayer d(SEED_START, SEED_END);
 
-  int g_most_turns = 0;
-  int g_best_deck[DECK_SIZE];
-  std::fill(g_best_deck, g_best_deck+DECK_SIZE, 0);
+  int most_turns = 0;
+  int best_deck[DECK_SIZE];
 
   #pragma omp parallel
   {
@@ -132,16 +129,16 @@ int main(int argc, char** argv) {
 
       #pragma omp critical
       {
-        if(turns > g_most_turns) {
-          g_most_turns = turns;
-          memcpy(g_best_deck, deck, sizeof(int) * DECK_SIZE);
+        if(turns > most_turns) {
+          most_turns = turns;
+          memcpy(best_deck, deck, sizeof(int) * DECK_SIZE);
         }
         if(seed % UPDATE_INTERVAL == 0) {
-          d.progress(seed, g_best_deck, g_most_turns, UPDATE_INTERVAL);
+          d.progress(seed, best_deck, most_turns, UPDATE_INTERVAL);
         }
       }
     }
   }
 
-  d.summary(g_best_deck);
+  d.summary(best_deck);
 }
