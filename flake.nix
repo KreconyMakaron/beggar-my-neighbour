@@ -13,14 +13,11 @@
           };
         in
         {
-          packages = {
+          packages = rec {
             compile = pkgs.writeShellScriptBin "compile" ''
-                NIX_ENFORCE_NO_NATIVE=0 g++ $1.cpp -o $1 -O3 -std=c++23 -march=native -ffast-math -fopenmp
+                NIX_ENFORCE_NO_NATIVE=0 g++ display.cpp beg.cpp -o beg -O3 -std=c++23 -march=native -ffast-math -fopenmp
             '';
-            compile_and_run = pkgs.writeShellScriptBin "compile_and_run" ''
-
-
-            '';
+            default = compile;
           };
 
 					devShells.default = pkgs.mkShell {

@@ -1,12 +1,14 @@
-#include<bits/stdc++.h>
+#include<algorithm>
+#include<cstring>
+#include<random>
 #include<omp.h>
+#include"display.h"
 
 const int DECK_SIZE = 52;
 const int THREAD_COUNT = 8;
+const int UPDATE_INTERVAL = 1'000'000;
 
 typedef long long ll;
-
-const char card_face[5] = {'-', 'J', 'Q', 'K', 'A'};
 
 const int start_deck[DECK_SIZE] = {
   1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4,
@@ -15,49 +17,6 @@ const int start_deck[DECK_SIZE] = {
 };
 
 ll SEED_START, SEED_END, SEEDS;
-
-const int BAR_WIDTH = 35;
-const int UPDATE_INTERVAL = 1'000'000;
-const std::string space = "    ";
-std::chrono::time_point<std::chrono::high_resolution_clock> bar;
-
-void display_progress(ll seed, int* deck, int turns) {
-  double percentage = (double)(seed - SEED_START) / SEEDS;
-  int pos = BAR_WIDTH * percentage;
-
-  std::cout << "\033[s\033[2A"; 
-  
-  //line 1
-  std::cout << "\r\033[K";
-  for(int i = 0; i < DECK_SIZE / 2; ++i) std::cout << card_face[deck[i]];
-
-  std::cout << space;
-  for (int i = 0; i < BAR_WIDTH; ++i) {
-      if (i <= pos) std::cout << "█";
-      else std::cout << " ";
-  }
-  std::cout << "  " << std::fixed << std::setprecision(2) << percentage * 100 << "%\n";
-
-  //line 2
-  std::cout << "\r\033[K";
-  for(int i = 0; i < DECK_SIZE / 2; ++i) std::cout << card_face[deck[i+DECK_SIZE / 2]];
-
-  std::chrono::duration<double, std::micro> time = std::chrono::high_resolution_clock::now() - bar;
-  double avg = time.count() / UPDATE_INTERVAL;
-
-  std::cout << space <<"\033[1mMost Turns:\033[22m " << turns << space << "\033[1mAvg:\033[22m ";
-  std::cout << std::fixed << std::setprecision(2) << avg << "μs" << space;
-
-  ll eta = floor(avg * (SEED_END - seed) / 1'000'000);
-
-  std::cout << "\033[1mETA:\033[22m ";
-  if(eta / 3600 % 24) std::cout << (eta / 3600) % 24 << "h";
-  else if(eta / 60 % 60) std::cout << (eta / 60) % 60 << "m";
-  else std::cout << eta % 60 << "s";
-  std::cout << "\n";
-
-  bar = std::chrono::high_resolution_clock::now();
-}
 
 class queue {
 public:
@@ -76,13 +35,13 @@ public:
   void push(int val) {
     data[tail] = val;
     size++;
-    tail = (tail + 1);
+    tail++;
     if(tail >= DECK_SIZE) tail -= DECK_SIZE;
   }
 
   void pop() {
     size--;
-    head = (head + 1);
+    head++;
     if(head >= DECK_SIZE) head -= DECK_SIZE;
   }
 
@@ -149,14 +108,11 @@ int main(int argc, char** argv) {
     exit(-1);
   }
 
-  std::cout << "\n\n";    // dummy lines
-
   SEED_START = std::stoll(argv[1]);
   SEED_END = std::stoll(argv[2]);
   SEEDS = SEED_END - SEED_START + 1;
 
-  auto start = std::chrono::high_resolution_clock::now();
-  bar = start;
+  display::displayer d(SEED_START, SEED_END, std::chrono::high_resolution_clock::now());
 
   int g_most_turns = 0;
   int g_best_deck[DECK_SIZE];
@@ -182,22 +138,11 @@ int main(int argc, char** argv) {
           memcpy(g_best_deck, deck, sizeof(int) * DECK_SIZE);
         }
         if(seed % UPDATE_INTERVAL == 0) {
-          display_progress(seed, g_best_deck, g_most_turns);
+          d.progress(seed, g_best_deck, g_most_turns, UPDATE_INTERVAL);
         }
       }
     }
   }
-  auto end = std::chrono::high_resolution_clock::now();
-  std::chrono::duration<double, std::micro> time = end - start;
-  ll amt = time.count() / 1000000;
 
-  std::cout << "\n\033[1msimulation took:\033[22m ";
-  if(amt / 3600 % 24) std::cout << (amt / 3600) % 24 << "h";
-  else if(amt / 60 % 60) std::cout << (amt / 60) % 60 << "m";
-  else std::cout << amt % 60 << "s";
-  std::cout << "\n\033[1mbest cards:\033[22m\n";
-
-  for(int i = 0; i < DECK_SIZE / 2; ++i) std::cout << card_face[g_best_deck[i]];
-  std::cout << "\n";
-  for(int i = 0; i < DECK_SIZE / 2; ++i) std::cout << card_face[g_best_deck[i+DECK_SIZE / 2]];
+  d.summary(g_best_deck);
 }
